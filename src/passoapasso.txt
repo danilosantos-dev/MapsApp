@@ -1,0 +1,91 @@
+1 - Configurando a PWA -  npm install @ionic/pwa-elements e 
+colocar o import no main.ts - import { defineCustomElements } from '@ionic/pwa-elements/loader';
+e chamar a propriedade embaixo : defineCustomElements(window);
+
+2 - Instalar a pwa do angular : ng add @angular/pwa e colocar o app em produção : ionic build --prod
+
+3 - Alterar em enviroment.prod.ts : 
+    production: true,
+    mapsKey: "AIzaSyD6v5fULYIQf3DgoRdHRxCahyUMBJSYyjc" 
+    Fazer o mesmo para o enviroment.ts mas em production será false;
+
+4 - Instalar o plug-in do google maps: npm install @capacitor/google-maps e rodar
+npx cap sync caso não funcione, rodar:  ionic cap sync
+
+5 - Em seguida importar o custom elements em home.module.ts : import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core' e 
+@NgModule({
+  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+}) , importar apenas o "schemas".
+
+6 - Color a tag do componente no html: <capacitor-google-map id="map"></capacitor-google-map>
+
+7 - No home.page.ts: 
+    
+    Fazer os imports: 
+
+    import { Component, ElementRef, ViewChild } from '@angular/core';
+
+    import { GoogleMap } from '@capacitor/google-maps';
+    import { environment } from 'src/environments/environment';
+    import { Geolocation, Position } from '@capacitor/geolocation';
+
+    E fazer as alterações: 
+
+    @ViewChild('map') mapRef!: ElementRef<HTMLElement>;
+    map!: GoogleMap;
+
+    constructor() { }
+
+    ionViewWillEnter() {
+        this.createMap();
+    }
+
+    async createMap() {
+        this.map = await GoogleMap.create({
+        id: 'my-map',
+        element: this.mapRef.nativeElement,
+        apiKey: environment.mapsKey,
+        config: {
+            center: {
+                lat: -22.489271,
+                lng: -48.546447,
+            },
+            zoom: 1,
+        },
+    });
+    this.buscarPosicao();
+  }
+
+    async buscarPosicao() {
+        const coordinates = await Geolocation.getCurrentPosition();
+        console.log('Current position:', coordinates);
+        this.adicionarMarcador(coordinates);
+        return coordinates;
+    }
+
+     async adicionarMarcador(coordinates: Position) {
+        // Add a marker to the map
+        const markerId = await this.map.addMarker({
+            coordinate: {
+                lat: coordinates.coords.latitude,
+                lng: coordinates.coords.longitude
+            }      
+        });
+        this.zoomNoMarcador(coordinates);
+    }
+
+  zoomNoMarcador(coordinates: Position){
+    this.map.setCamera({
+      coordinate:{
+        lat: coordinates.coords.latitude,
+        lng: coordinates.coords.longitude
+      },
+    zoom:15,
+    animate: true
+    })
+  }
+
+7.1 - OBS - Para que o geolocation funcione é preciso ter instalado o plugin: 
+npm install @capacitor/geolocation
+npx cap sync ou ionic cap sync
+
